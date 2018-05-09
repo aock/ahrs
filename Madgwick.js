@@ -18,7 +18,7 @@
  * The Madgwick algorithm.  See: http://www.x-io.co.uk/open-source-imu-and-ahrs-algorithms/
  * @param {number} sampleInterval The sample interval in milliseconds.
  */
-module.exports = function Madgwick(sampleInterval, options) {
+var Madgwick = function(sampleInterval, options) {
 
     //---------------------------------------------------------------------------------------------------
     // Definitions
@@ -40,6 +40,26 @@ module.exports = function Madgwick(sampleInterval, options) {
                 x: q1,
                 y: q2,
                 z: q3
+            };
+        },
+        toVector: function() {
+            var q = this.getQuaternion();
+            var angle = 2 * Math.acos(q.w);
+            var sinAngle = Math.sin(angle / 2);
+            return {
+                angle: angle,
+                x: q.x / sinAngle,
+                y: q.y / sinAngle,
+                z: q.z / sinAngle
+            };
+        },
+        getEulerAngles: function() {
+            var q = this.getQuaternion();
+            var ww = q.w * q.w, xx = q.x * q.x, yy = q.y * q.y, zz = q.z * q.z;
+            return {
+                heading: Math.atan2(2 * (q.x * q.y + q.z * q.w), xx - yy - zz + ww),
+                pitch: -Math.asin(2 * (q.x * q.z - q.y * q.w)),
+                roll: Math.atan2(2 * (q.y * q.z + q.x * q.w), -xx - yy + zz + ww)
             };
         }
     };
@@ -122,6 +142,7 @@ module.exports = function Madgwick(sampleInterval, options) {
     // AHRS algorithm update
 
     function madgwickAHRSupdate(gx, gy, gz, ax, ay, az, mx, my, mz, deltaTimeSec) {
+        //console.log("execute update");
         recipSampleFreq = deltaTimeSec || recipSampleFreq;
         var recipNorm;
         var s0, s1, s2, s3;
@@ -224,3 +245,5 @@ module.exports = function Madgwick(sampleInterval, options) {
     //====================================================================================================
 
 };
+
+module.exports = Madgwick;
